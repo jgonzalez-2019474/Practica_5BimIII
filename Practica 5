@@ -1,0 +1,199 @@
+#include <LedControl.h>
+
+#include <Ticker.h>
+
+ 
+
+#define Din 2
+
+#define CLK 3
+
+#define CS 4
+
+#define Sensor_Pin  A0
+
+ 
+
+
+
+//Constructor
+
+void Gas_Lectura();
+
+LedControl ledMatrix = LedControl(Din, CLK, CS, 1);
+
+Ticker ISR_GAS(Gas_Lectura, 5000);
+
+ 
+
+//funciones
+
+const int Amplitud_matriz = 8; 
+
+const int alto_matriz = 8; 
+
+int Estado_Gas;
+
+int Propano;
+
+ 
+
+//Animaciones de la matriz LED
+
+byte Deteccion1[8] = {
+
+B00001110,
+
+B00011100,
+
+B00111100,
+
+B01111110,
+
+B01111110,
+
+B01111110,
+
+B01111110,
+
+B00111100
+
+};
+
+ 
+
+byte Deteccion2[8] = {
+
+B00011000,
+
+B00011000,
+
+B00111100,
+
+B00111100,
+
+B01000010,
+
+B01000010,
+
+B01000010,
+
+B00111100
+
+};
+
+ 
+
+byte Copo_De_Nieve [8] = {
+
+B10011001,
+
+B01011010,
+
+B00111100,
+
+B11111111,
+
+B11111111,
+
+B00111100,
+
+B01011010,
+
+B10011001
+
+};
+
+ 
+
+void setup() {
+
+  ledMatrix.shutdown(0, false); 
+
+  ledMatrix.setIntensity(0, 15); 
+
+  ledMatrix.clearDisplay(0); 
+
+  pinMode(Sensor_Pin, INPUT); 
+
+  ISR_GAS.start();
+
+  Serial.begin(9600);
+
+}
+
+ 
+
+void loop()
+
+{
+
+
+ISR_GAS.update();
+
+  if (Propano > 60) {
+
+    alerta_fuego();
+
+}
+
+  else {
+
+    for (int i = 0; i < alto_matriz; i++) {
+
+    ledMatrix.setColumn(0, i, Copo_De_Nieve[i]);
+
+  }
+
+  }
+
+  delay(1000);
+
+}
+
+void Gas_Lectura(){
+
+  int suma = 0;
+
+  for(int j = 0; j < 5; j++){
+
+  Estado_Gas = map(analogRead(Gas_Lectura),0,1023,0,100);
+
+  suma = suma + Estado_Gas;
+
+  delay(100);
+
+  }
+
+  Propano = suma/5;
+
+  Serial.println(Estado_Gas);
+
+}
+
+void alerta_fuego() {
+
+  ledMatrix.clearDisplay(0);
+
+for(int t = 0; t<5;t++){
+
+  for (int i = alto_matriz; i > 0; i--) {
+
+    ledMatrix.setColumn(0, i, Deteccion1[i]);
+
+  }
+
+  delay(500);
+
+
+  for (int i = alto_matriz; i > 0; i--) {
+
+    ledMatrix.setColumn(0, i, Deteccion2[i]);
+
+  }
+
+  delay(500);
+
+}
+
+}
